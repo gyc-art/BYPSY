@@ -38,7 +38,6 @@ const MainSite: React.FC = () => {
   const [sessionCount, setSessionCount] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'transfer'>('qr');
 
-  // --- 动态支付配置 ---
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(() => {
     const saved = localStorage.getItem('banyan_payment_config');
     return saved ? JSON.parse(saved) : {
@@ -49,7 +48,6 @@ const MainSite: React.FC = () => {
     };
   });
 
-  // --- 动态助理配置 - 已修复同步显示问题 ---
   const [assistantQr, setAssistantQr] = useState<string>(() => {
     return localStorage.getItem('banyan_assistant_qr') || '';
   });
@@ -73,12 +71,10 @@ const MainSite: React.FC = () => {
 
   const categories = ['全部', '恋爱心理', '婚姻家庭', '青少年心理', '情绪调节', '职场压力'];
 
-  // --- 公益项目状态 ---
   const [isCharityMode, setIsCharityMode] = useState(false);
   const [globalCharity, setGlobalCharity] = useState<GlobalCharityProject | null>(null);
   const [charityBookingStep, setCharityBookingStep] = useState<'invite' | 'pay' | 'select_counselor' | 'select_time' | 'done'>('invite');
 
-  // --- 来访者账户状态 ---
   const [clientPhone, setClientPhone] = useState<string>(localStorage.getItem('banyan_client_phone') || '');
   const [clientSessions, setClientSessions] = useState<number>(Number(localStorage.getItem('banyan_client_sessions') || '0'));
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -87,12 +83,6 @@ const MainSite: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [changePasswordForm, setChangePasswordForm] = useState({ phone: '', oldPass: '', newPass: '' });
   const [clientProfileTab, setClientProfileTab] = useState<'status' | 'history' | 'settings'>('status');
-
-  useEffect(() => {
-    const handleTogglePractitioner = () => setIsPractitionerOpen(true);
-    window.addEventListener('togglePractitionerPortal', handleTogglePractitioner);
-    return () => window.removeEventListener('togglePractitionerPortal', handleTogglePractitioner);
-  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -252,7 +242,7 @@ const MainSite: React.FC = () => {
         <nav className="px-6 md:px-20 py-4 md:py-8 flex flex-col items-center">
           <div className="w-full flex justify-between items-center">
             <div className="flex items-center gap-4 cursor-pointer group" onClick={() => { window.scrollTo({top: 0, behavior: 'smooth'}); setActiveSubMenu(null); }}>
-              <div onDoubleClick={() => setIsAdminOpen(true)} className="w-10 h-10 md:w-11 md:h-11 bg-[#B87333] rounded-full flex items-center justify-center text-white font-serif text-lg md:text-xl transition-all duration-700 group-hover:shadow-[0_15px_40px_-5px_rgba(184,115,51,0.5)]">伴</div>
+              <div className="w-10 h-10 md:w-11 md:h-11 bg-[#B87333] rounded-full flex items-center justify-center text-white font-serif text-lg md:text-xl transition-all duration-700 group-hover:shadow-[0_15px_40px_-5px_rgba(184,115,51,0.5)]">伴</div>
               <div className="flex flex-col">
                 <h1 className="text-[15px] md:text-[16px] font-serif font-black text-[#1A1412] tracking-widest leading-none">伴言心理</h1>
                 <span className="text-[7px] md:text-[8px] text-stone-200 font-black uppercase tracking-[0.4em] mt-1.5">Presence & Dialogue</span>
@@ -331,7 +321,6 @@ const MainSite: React.FC = () => {
 
       <BanyanSpace />
 
-      {/* 专家列表部分 */}
       <section id="counselors-grid" className="w-full pt-48 pb-64 bg-white">
         <div id="counselors-grid-anchor" className="max-w-[1500px] mx-auto px-6 md:px-20">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-24 gap-12">
@@ -389,11 +378,9 @@ const MainSite: React.FC = () => {
         </div>
       </section>
 
-      {/* 预订流程浮层 */}
       {selectedCounselor && !isCharityMode && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-[#1A1412]/90 backdrop-blur-xl">
           <div className="bg-white w-full max-w-5xl h-[95vh] md:h-[92vh] rounded-t-[40px] md:rounded-[60px] shadow-4xl overflow-hidden relative flex flex-col animate-in slide-in-from-bottom-12">
-            {/* 专家头部概览 */}
             <div className="h-32 md:h-56 relative shrink-0">
                <img src={selectedCounselor.avatar} className="w-full h-full object-cover" />
                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent"></div>
@@ -496,7 +483,6 @@ const MainSite: React.FC = () => {
                )}
                {bookingStep === 'payment' && (
                  <div className="flex flex-col items-center py-10 space-y-12 animate-in zoom-in h-full overflow-y-auto no-scrollbar">
-                    {/* 人文关怀与提醒 */}
                     <div className="max-w-xl w-full text-center space-y-10">
                        <div className="space-y-4 px-6">
                           <h4 className="text-2xl font-serif text-[#1A1412]">开启一段勇敢的旅程</h4>
@@ -505,7 +491,6 @@ const MainSite: React.FC = () => {
                           </p>
                        </div>
                        
-                       {/* 支付方式切换 */}
                        <div className="flex justify-center mb-4">
                           <div className="inline-flex bg-stone-50 p-1.5 rounded-full border border-stone-100">
                              <button 
@@ -558,7 +543,6 @@ const MainSite: React.FC = () => {
                          </div>
                        )}
 
-                       {/* 支付提醒模块 (保持不动) */}
                        <div className="bg-[#FAF8F6] p-8 rounded-[40px] border border-[#B87333]/10 space-y-6 text-left relative overflow-hidden group mx-4">
                           <div className="absolute top-0 right-0 w-24 h-24 bg-[#B87333]/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
                           <div className="flex items-start gap-4 relative z-10">
@@ -585,7 +569,6 @@ const MainSite: React.FC = () => {
                     <button onClick={() => {setBookingStep('assistant'); setClientSessions(clientSessions + sessionCount);}} className="px-24 py-5 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] hover:bg-[#B87333] transition-all shadow-2xl mb-12">我已完成支付 I PAID</button>
                  </div>
                )}
-               {/* 修复小助理二维码不显示的 Step */}
                {bookingStep === 'assistant' && (
                  <div className="flex flex-col items-center justify-center py-20 animate-in fade-in text-center space-y-12 h-full">
                    <div className="space-y-6 max-w-lg">
@@ -628,7 +611,6 @@ const MainSite: React.FC = () => {
         </div>
       )}
 
-      {/* 剩余的通用 Modal 保持不变 */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 z-[300] bg-[#1A1412]/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in">
           <div className="bg-white w-full max-md rounded-[50px] p-12 relative overflow-hidden">
@@ -735,7 +717,7 @@ const MainSite: React.FC = () => {
 
       {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} allCounselors={allCounselors} onUpdateCounselors={setAllCounselors} />}
       {isPractitionerOpen && <PractitionerDashboard onClose={() => setIsPractitionerOpen(false)} allCounselors={allCounselors} onUpdateCounselors={setAllCounselors} />}
-      <Footer />
+      <Footer onAdminPortal={() => setIsAdminOpen(true)} onPractitionerPortal={() => setIsPractitionerOpen(true)} />
     </div>
   );
 };
