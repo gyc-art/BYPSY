@@ -10,7 +10,6 @@ interface AdminDashboardProps {
 
 const SPECIALTY_OPTIONS = ['恋爱心理', '婚姻家庭', '青少年心理', '情绪调节', '职场压力', '个人成长', '原生家庭', '深度陪伴', '动力学取向', '人际关系', '自我同一性', '复杂性创伤'];
 
-// 助手函数：生成初始排班（默认全部下线/已占用状态，待咨询师激活）
 const generateInitialSlots = (): TimeSlot[] => {
   const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   const times: string[] = [];
@@ -23,7 +22,7 @@ const generateInitialSlots = (): TimeSlot[] => {
       id: `${Math.random().toString(36).substr(2, 5)}-${day}-${time}`,
       day,
       time,
-      isBooked: true // 初始设为 true (即 Offline/不可约)，咨询师需在工作台点亮
+      isBooked: true 
     }))
   );
 };
@@ -33,7 +32,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
   const [loginForm, setLoginForm] = useState({ phone: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'brand' | 'staff' | 'finance'>('brand');
+  const [activeTab, setActiveTab] = useState<'charity' | 'staff' | 'finance'>('charity');
   const [financeSubTab, setFinanceSubTab] = useState<'ledger' | 'pending' | 'payment_config'>('ledger');
   const [editingCounselor, setEditingCounselor] = useState<Counselor | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -42,7 +41,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
   const [trainingInput, setTrainingInput] = useState('');
   const [showTrainingInput, setShowTrainingInput] = useState(false);
 
-  // --- 品牌管理：公益项目状态 ---
   const [charityProject, setCharityProject] = useState<GlobalCharityProject>(() => {
     const saved = localStorage.getItem('banyan_global_charity');
     return saved ? JSON.parse(saved) : {
@@ -122,7 +120,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
     localStorage.setItem('banyan_assistant_qr', assistantQr);
     window.dispatchEvent(new Event('charity_project_updated'));
     window.dispatchEvent(new Event('banyan_assistant_updated'));
-    showToast('✓ 品牌配置已实时生效');
+    showToast('✓ 公益配置已实时生效');
   };
 
   const charityShareUrl = useMemo(() => `${window.location.origin}${window.location.pathname}#/?mode=charity`, []);
@@ -139,7 +137,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
       supervisionReceivedHours: 0, personalTherapyHours: 0, supervisionGivenHours: 0,
       specialties: [], tags: ['严选录入'], training: [], bio: '', education: '', 
       price: 500, rating: 5.0, available: true, 
-      availableSlots: generateInitialSlots(), // 核心修复：初始化排班数组
+      availableSlots: generateInitialSlots(), 
       auditStatus: { backgroundChecked: true, ethicalInterviewed: true, clinicalAssessed: true }
     };
     setEditingCounselor(newCounselor);
@@ -170,6 +168,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
     setEditingCounselor({ ...editingCounselor, specialties: next });
   };
 
+  const handleAddTraining = () => {
+    if (!editingCounselor || !trainingInput.trim()) return;
+    setEditingCounselor({
+      ...editingCounselor,
+      training: [...editingCounselor.training, trainingInput.trim()]
+    });
+    setTrainingInput('');
+    showToast('✓ 已添加经历');
+  };
+
   const handleSavePaymentConfig = () => {
     localStorage.setItem('banyan_payment_config', JSON.stringify(paymentConfig));
     window.dispatchEvent(new Event('banyan_payment_config_updated'));
@@ -182,10 +190,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
         <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-12 text-center">
           <div className="w-16 h-16 bg-[#B87333] rounded-2xl flex items-center justify-center text-white font-serif text-4xl mx-auto mb-8">伴</div>
           <form onSubmit={handleLogin} className="space-y-6">
-            <input type="text" placeholder="手机号" value={loginForm.phone} onChange={e => setLoginForm({...loginForm, phone: e.target.value})} className="w-full px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl outline-none" />
-            <input type="password" placeholder="密码" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl outline-none" />
-            <button type="submit" className="w-full bg-[#1A1412] text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[11px]">创始人验证进入</button>
+            <input type="text" placeholder="创始人手机号" value={loginForm.phone} onChange={e => setLoginForm({...loginForm, phone: e.target.value})} className="w-full px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl outline-none focus:border-[#B87333]" />
+            <input type="password" placeholder="创始人密码" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full px-6 py-4 bg-stone-50 border border-stone-100 rounded-2xl outline-none focus:border-[#B87333]" />
+            <button type="submit" className="w-full bg-[#1A1412] text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[11px] hover:bg-[#B87333] transition-all">创始人验证进入</button>
+            <button type="button" onClick={onClose} className="text-[10px] text-stone-300 font-bold uppercase tracking-widest block w-full text-center">返回首页</button>
           </form>
+          {loginError && <p className="mt-4 text-red-500 text-xs font-bold">{loginError}</p>}
         </div>
       </div>
     );
@@ -196,14 +206,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
       {toast && <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[400] bg-[#1A1412] text-white px-8 py-4 rounded-full shadow-2xl text-[11px] font-black uppercase tracking-widest">{toast}</div>}
 
       <div className="flex justify-between items-center mb-12 px-6 shrink-0">
-        <h2 className="text-2xl font-black text-[#1A1412] tracking-tighter uppercase">伴言 · 创始人总控台</h2>
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 bg-[#B87333] rounded-2xl flex items-center justify-center text-white font-serif text-2xl shadow-xl">伴</div>
+          <h2 className="text-2xl font-black text-[#1A1412] tracking-tighter uppercase">伴言 · 创始人管理总台</h2>
+        </div>
         <button onClick={onClose} className="w-12 h-12 rounded-full bg-white border border-stone-100 flex items-center justify-center text-stone-400 hover:rotate-90 transition-all">✕</button>
       </div>
 
       <div className="flex flex-1 overflow-hidden rounded-[48px] bg-white shadow-2xl border border-stone-50 flex-col md:flex-row">
         <aside className="w-full md:w-72 bg-[#FAF8F6]/40 border-r border-stone-50 p-10 flex flex-row md:flex-col gap-10 overflow-x-auto no-scrollbar">
           {[
-            { id: 'brand', zh: '品牌管理', en: 'BRANDING' },
+            { id: 'charity', zh: '公益管理', en: 'CHARITY' },
             { id: 'staff', zh: '专家名录', en: 'DIRECTORY' },
             { id: 'finance', zh: '结算中心', en: 'FINANCE' },
           ].map(tab => (
@@ -216,11 +229,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
         </aside>
 
         <main className="flex-1 p-8 md:p-16 overflow-y-auto no-scrollbar bg-white">
-          {activeTab === 'brand' && (
+          {activeTab === 'charity' && (
             <div className="space-y-16 animate-in fade-in">
               <header className="space-y-4">
-                 <h3 className="text-4xl font-serif text-[#1A1412]">品牌资产与公益配置</h3>
-                 <p className="text-stone-400 font-serif italic text-sm">在此设定全局规则。发布后可生成分发二维码。</p>
+                 <h3 className="text-4xl font-serif text-[#1A1412]">公益管理</h3>
+                 <p className="text-stone-400 font-serif italic text-sm">设定公益规则并发布。您可以将生成的公益二维码分发给需要的来访者。</p>
               </header>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
@@ -228,7 +241,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                    <div className="bg-[#FAF8F6] p-10 rounded-[40px] border border-stone-50 space-y-10">
                       <div className="flex justify-between items-center px-2">
                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-[#1A1412] uppercase tracking-widest">公益直通计划 (GLOBAL ACTIVE)</label>
+                            <label className="text-[10px] font-black text-[#1A1412] uppercase tracking-widest">公益项目开关 (GLOBAL STATUS)</label>
                          </div>
                          <button onClick={() => setCharityProject({...charityProject, enabled: !charityProject.enabled})} className={`w-14 h-8 rounded-full p-1 transition-all ${charityProject.enabled ? 'bg-[#B87333]' : 'bg-stone-200'}`}>
                             <div className={`w-6 h-6 bg-white rounded-full transition-all ${charityProject.enabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -269,26 +282,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                            ))}
                         </div>
                       </div>
-                      <button onClick={handleSaveCharity} className="w-full py-6 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl hover:bg-[#B87333] transition-all">发布并同步品牌配置</button>
+                      <button onClick={handleSaveCharity} className="w-full py-6 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl hover:bg-[#B87333] transition-all">发布并同步公益配置</button>
                    </div>
                  </div>
 
                  <div className="lg:col-span-4 space-y-12">
                     <div className="bg-[#FAF8F6] p-10 rounded-[40px] border border-stone-50 space-y-10 text-center">
-                       <h4 className="text-[10px] font-black text-[#1A1412] uppercase tracking-[0.4em]">分发获客入口</h4>
+                       <h4 className="text-[10px] font-black text-[#1A1412] uppercase tracking-[0.4em]">公益分发二维码</h4>
                        <div className="p-8 bg-white rounded-[32px] border border-stone-100 shadow-sm relative group">
                           <img 
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(charityShareUrl)}`} 
                             className="w-full aspect-square object-contain rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700" 
                           />
                           <div className="absolute inset-0 bg-white/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all cursor-pointer" onClick={copyCharityLink}>
-                             <span className="bg-[#1A1412] text-white px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl">复制 URL</span>
+                             <span className="bg-[#1A1412] text-white px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl">复制链接</span>
                           </div>
                        </div>
                        <div className="space-y-4 pt-6 border-t border-stone-100">
-                          <label className="text-[10px] font-black text-[#1A1412] uppercase tracking-widest block mb-4">小助理连接码 (ASSET)</label>
+                          <label className="text-[10px] font-black text-[#1A1412] uppercase tracking-widest block mb-4">小助理微信码 (ASSET)</label>
                           <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setAssistantQr(b))} className="aspect-square bg-white rounded-3xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center relative group overflow-hidden">
-                             {assistantQr ? <img src={assistantQr} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[9px] font-black uppercase tracking-widest">拖入图片</span>}
+                             {assistantQr ? <img src={assistantQr} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[9px] font-black uppercase tracking-widest">拖入小助理码</span>}
                           </div>
                        </div>
                     </div>
@@ -301,8 +314,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
             <div className="space-y-12 animate-in fade-in">
               <div className="flex justify-between items-end">
                 <div className="space-y-2">
-                  <h3 className="text-4xl font-serif text-[#1A1412]">专家名录管理</h3>
-                  <p className="text-stone-400 font-serif italic text-sm">严选专家入驻。档案同步后将公示于前端专家墙。</p>
+                  <h3 className="text-4xl font-serif text-[#1A1412]">专家名录</h3>
+                  <p className="text-stone-400 font-serif italic text-sm">严选专家入驻管理。同步后信息将实时更新至前端展示墙。</p>
                 </div>
                 <button onClick={handleOpenNewCounselor} className="px-10 py-4 bg-[#B87333] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">新增专家档案</button>
               </div>
@@ -316,7 +329,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                         <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">{c.serialNumber}</span>
                       </div>
                     </div>
-                    <button onClick={() => setEditingCounselor(c)} className="w-full py-4 bg-[#1A1412] text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest">管理专家档案</button>
+                    <button onClick={() => setEditingCounselor(c)} className="w-full py-4 bg-[#1A1412] text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest">编辑档案</button>
                   </div>
                 ))}
               </div>
@@ -326,9 +339,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
           {activeTab === 'finance' && (
             <div className="space-y-12 animate-in fade-in">
               <header className="space-y-4">
-                 <h3 className="text-4xl font-serif text-[#1A1412]">财务结算体系</h3>
+                 <h3 className="text-4xl font-serif text-[#1A1412]">结算中心</h3>
                  <div className="flex gap-8 border-b border-stone-100 pb-2">
-                    {[{ id: 'ledger', zh: '专家费用结算' }, { id: 'pending', zh: '退款审核' }, { id: 'payment_config', zh: '支付方式修改' }].map(sub => (
+                    {[{ id: 'ledger', zh: '服务结算单' }, { id: 'pending', zh: '待审退款' }, { id: 'payment_config', zh: '支付方式配置' }].map(sub => (
                       <button key={sub.id} onClick={() => setFinanceSubTab(sub.id as any)} className={`pb-4 text-[13px] font-bold transition-all relative ${financeSubTab === sub.id ? 'text-[#B87333]' : 'text-stone-300'}`}>
                         {sub.zh}
                         {financeSubTab === sub.id && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#B87333]"></div>}
@@ -342,9 +355,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                       <thead>
                         <tr className="bg-stone-50 text-[10px] font-black text-stone-300 uppercase tracking-widest">
                           <th className="py-6 px-6">专家姓名</th>
-                          <th className="py-6 px-4">总收费</th>
-                          <th className="py-6 px-4 text-[#B87333]">税/技费(20%)</th>
-                          <th className="py-6 px-4 font-black">待发放</th>
+                          <th className="py-6 px-4">总营收</th>
+                          <th className="py-6 px-4 text-[#B87333]">平台服务费(20%)</th>
+                          <th className="py-6 px-4 font-black">专家待结算</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-50 text-sm">
@@ -363,11 +376,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
               {financeSubTab === 'payment_config' && (
                 <div className="max-w-xl bg-[#FAF8F6] p-10 rounded-[40px] border border-stone-50 space-y-8">
                    <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setPaymentConfig({...paymentConfig, qrCodeUrl: b}))} className="aspect-square w-48 bg-white mx-auto rounded-3xl border-2 border-dashed border-stone-200 flex items-center justify-center relative group overflow-hidden">
-                      {paymentConfig.qrCodeUrl ? <img src={paymentConfig.qrCodeUrl} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[10px] font-black">拖入收款码</span>}
+                      {paymentConfig.qrCodeUrl ? <img src={paymentConfig.qrCodeUrl} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[10px] font-black">拖入收款二维码</span>}
                    </div>
-                   <input type="text" placeholder="账户名称" value={paymentConfig.accountName} onChange={e => setPaymentConfig({...paymentConfig, accountName: e.target.value})} className="w-full p-4 bg-white border border-stone-100 rounded-2xl outline-none" />
-                   <input type="text" placeholder="账号" value={paymentConfig.accountNumber} onChange={e => setPaymentConfig({...paymentConfig, accountNumber: e.target.value})} className="w-full p-4 bg-white border border-stone-100 rounded-2xl outline-none" />
-                   <button onClick={handleSavePaymentConfig} className="w-full py-5 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl">同步公司支付方式</button>
+                   <input type="text" placeholder="对公账户名称" value={paymentConfig.accountName} onChange={e => setPaymentConfig({...paymentConfig, accountName: e.target.value})} className="w-full p-4 bg-white border border-stone-100 rounded-2xl outline-none" />
+                   <input type="text" placeholder="对公银行账号" value={paymentConfig.accountNumber} onChange={e => setPaymentConfig({...paymentConfig, accountNumber: e.target.value})} className="w-full p-4 bg-white border border-stone-100 rounded-2xl outline-none" />
+                   <button onClick={handleSavePaymentConfig} className="w-full py-5 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl">更新公司支付信息</button>
                 </div>
               )}
             </div>
@@ -378,31 +391,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
       {editingCounselor && (
         <div className="fixed inset-0 z-[300] bg-[#1A1412]/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-12">
            <div className="bg-white w-full max-w-7xl h-full rounded-[64px] flex flex-col shadow-4xl relative overflow-hidden">
-              <button onClick={() => setEditingCounselor(null)} className="absolute top-12 right-12 text-stone-400 w-12 h-12 flex items-center justify-center border border-stone-50 rounded-full">✕</button>
+              <button onClick={() => setEditingCounselor(null)} className="absolute top-12 right-12 text-stone-400 w-12 h-12 flex items-center justify-center border border-stone-50 rounded-full hover:bg-stone-50 transition-colors">✕</button>
               <div className="flex-1 overflow-y-auto no-scrollbar p-12 md:p-24">
-                <header className="mb-16"><h2 className="text-4xl md:text-6xl font-serif text-[#1A1412] tracking-tighter italic">专家档案编辑器</h2></header>
+                <header className="mb-16"><h2 className="text-4xl md:text-6xl font-serif text-[#1A1412] tracking-tighter italic">档案编辑器</h2></header>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
                    <div className="lg:col-span-5 space-y-12">
                       <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setEditingCounselor({...editingCounselor, avatar: b}))} className="aspect-[4/5] bg-stone-50 rounded-[48px] overflow-hidden border border-stone-100 relative group cursor-pointer">
-                         {editingCounselor.avatar ? <img src={editingCounselor.avatar} className="w-full h-full object-cover transition-all group-hover:scale-105 duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-stone-200">本地拖入照片</div>}
+                         {editingCounselor.avatar ? <img src={editingCounselor.avatar} className="w-full h-full object-cover transition-all group-hover:scale-105 duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-stone-200">拖入照片</div>}
                       </div>
                       <div className="grid grid-cols-2 gap-8">
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">姓名 (NAME)</label>
+                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">姓名</label>
                             <input type="text" value={editingCounselor.name} onChange={e => setEditingCounselor({...editingCounselor, name: e.target.value})} className="w-full p-4 bg-stone-50 rounded-2xl outline-none font-serif text-xl" />
                          </div>
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">编号 (SERIAL)</label>
+                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">编号</label>
                             <input type="text" value={editingCounselor.serialNumber} onChange={e => setEditingCounselor({...editingCounselor, serialNumber: e.target.value})} className="w-full p-4 bg-stone-50 rounded-2xl outline-none" />
                          </div>
                       </div>
                       <div className="grid grid-cols-2 gap-8">
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">最高学历 (EDUCATION)</label>
+                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">学历</label>
                             <input type="text" value={editingCounselor.education} onChange={e => setEditingCounselor({...editingCounselor, education: e.target.value})} className="w-full p-4 bg-stone-50 rounded-2xl outline-none" />
                          </div>
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">常规单价 (¥/次)</label>
+                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-2">单价 (¥/次)</label>
                             <input type="number" value={editingCounselor.price} onChange={e => setEditingCounselor({...editingCounselor, price: parseInt(e.target.value)})} className="w-full p-4 bg-stone-50 rounded-2xl outline-none text-[#B87333] font-bold" />
                          </div>
                       </div>
@@ -410,7 +423,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                    <div className="lg:col-span-7 space-y-10">
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                         {[
-                          { label: '职业年限', key: 'experience' },
+                          { label: '执业年限', key: 'experience' },
                           { label: '个案时长', key: 'sessionHours' },
                           { label: '受督时长', key: 'supervisionReceivedHours' },
                           { label: '个人体验', key: 'personalTherapyHours' },
@@ -431,26 +444,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <div className="flex justify-between px-2">
-                          <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest">咨询寄语 (150 字内)</label>
-                        </div>
+                        <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest">咨询寄语</label>
                         <textarea maxLength={150} value={editingCounselor.bio} onChange={e => setEditingCounselor({...editingCounselor, bio: e.target.value})} className="w-full h-32 p-8 bg-[#FAF8F6] rounded-[32px] font-serif italic text-lg outline-none resize-none" />
                       </div>
                       <div className="space-y-4">
                         <div className="flex justify-between items-center px-2">
                            <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest">受训背景 (TRAINING)</label>
-                           <button onClick={() => setShowTrainingInput(true)} className="text-[10px] font-black text-[#B87333] border-b border-[#B87333]/20">＋ 增加经历项目</button>
+                           <button onClick={() => setShowTrainingInput(!showTrainingInput)} className="text-[10px] font-black text-[#B87333] border-b border-[#B87333]/20 hover:text-[#1A1412] transition-colors">{showTrainingInput ? '✕ 关闭输入' : '＋ 增加经历'}</button>
                         </div>
                         <div className="space-y-3">
                            {showTrainingInput && (
                              <div className="flex gap-4 animate-in slide-in-from-top-2">
-                                <input autoFocus value={trainingInput} onChange={e => setTrainingInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && (()=>{ if(!trainingInput.trim()) return; setEditingCounselor({...editingCounselor, training: [...editingCounselor.training, trainingInput.trim()]}); setTrainingInput(''); setShowTrainingInput(false); })()} className="flex-1 p-5 bg-stone-50 rounded-2xl outline-none text-sm border border-[#B87333]/10" placeholder="例如：中德精神分析连续培训项目..." />
+                                <input autoFocus value={trainingInput} onChange={e => setTrainingInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddTraining()} className="flex-1 p-5 bg-stone-50 rounded-2xl outline-none text-sm border border-[#B87333]/10 focus:border-[#B87333]" placeholder="例如：中德精神分析连续培训项目..." />
+                                <button onClick={handleAddTraining} className="w-14 h-14 bg-[#B87333] text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-[#1A1412] transition-all">＋</button>
                              </div>
                            )}
                            {editingCounselor.training.map((t, i) => (
-                             <div key={i} className="flex justify-between items-center p-5 bg-stone-50 rounded-2xl group hover:bg-white transition-all">
+                             <div key={i} className="flex justify-between items-center p-5 bg-stone-50 rounded-2xl group hover:bg-white transition-all border border-transparent hover:border-stone-100">
                                 <span className="text-sm font-serif text-stone-600">· {t}</span>
-                                <button onClick={() => setEditingCounselor({...editingCounselor, training: editingCounselor.training.filter((_, idx) => idx !== i)})} className="opacity-0 group-hover:opacity-100 text-stone-300">✕</button>
+                                <button onClick={() => setEditingCounselor({...editingCounselor, training: editingCounselor.training.filter((_, idx) => idx !== i)})} className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all">✕</button>
                              </div>
                            ))}
                         </div>
@@ -460,7 +472,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
               </div>
               <footer className="p-12 border-t border-stone-50 flex justify-end gap-6 bg-white/80 backdrop-blur-2xl rounded-b-[64px]">
                  <button onClick={() => setEditingCounselor(null)} className="px-12 py-5 text-[11px] font-black uppercase text-stone-300">取消</button>
-                 <button onClick={handleSaveCounselor} disabled={isSaving} className="px-20 py-6 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-widest text-[11px] shadow-2xl hover:bg-[#B87333] transition-all disabled:opacity-20">{isSaving ? '同步中...' : '保存并同步档案 SYNC'}</button>
+                 <button onClick={handleSaveCounselor} disabled={isSaving} className="px-20 py-6 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-widest text-[11px] shadow-2xl hover:bg-[#B87333] transition-all disabled:opacity-20">{isSaving ? '同步中...' : '保存并更新档案 SYNC'}</button>
               </footer>
            </div>
         </div>
