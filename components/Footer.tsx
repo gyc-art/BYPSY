@@ -1,7 +1,12 @@
 
 import React from 'react';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  onAdminPortal?: () => void;
+  onPractitionerPortal?: () => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onAdminPortal, onPractitionerPortal }) => {
   return (
     <footer id="footer" className="bg-[#FCFAF8] pt-32 pb-16 border-t border-stone-50">
       <div className="max-w-[1400px] mx-auto px-8 md:px-16">
@@ -9,9 +14,26 @@ const Footer: React.FC = () => {
         {/* Top Section: Identity & Quick Contact */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 pb-16 border-b border-stone-100/60">
           <div className="lg:col-span-7 space-y-4">
-            <h2 className="text-2xl md:text-3xl font-serif text-[#1A1412] tracking-wider font-medium">
-              深圳市伴言心理咨询有限责任公司
-            </h2>
+            <div className="flex items-center gap-3">
+              {/* 创始人入口：左侧极简灰色点，需双击触发 */}
+              <button 
+                onDoubleClick={onAdminPortal} 
+                className="w-1.5 h-1.5 rounded-full bg-stone-200 hover:bg-[#B87333] transition-colors cursor-default"
+                title=""
+              />
+              
+              <h2 className="text-2xl md:text-3xl font-serif text-[#1A1412] tracking-wider font-medium">
+                深圳市伴言心理咨询有限责任公司
+              </h2>
+
+              {/* 咨询师入口：右侧极简灰色点，需双击触发 */}
+              <button 
+                onDoubleClick={onPractitionerPortal} 
+                className="w-1.5 h-1.5 rounded-full bg-stone-200 hover:bg-[#B87333] transition-colors cursor-default"
+                title=""
+              />
+            </div>
+            
             <div className="flex items-center gap-6">
               <span className="text-[10px] font-black text-[#B87333] uppercase tracking-[0.3em]">
                 BANYAN PSYCHOLOGY

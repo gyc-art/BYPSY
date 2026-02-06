@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Counselor, TimeSlot, CaseNote, GrowthEvent, SpaceItem } from '../types';
-import { SPACE_ITEMS } from '../constants';
+import { Counselor, TimeSlot, CaseNote, GrowthEvent } from '../types';
 
 interface PractitionerDashboardProps {
   onClose: () => void;
@@ -14,37 +13,44 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
   const [loginForm, setLoginForm] = useState({ serial: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [activeCounselor, setActiveCounselor] = useState<Counselor | null>(null);
-  const [activeTab, setActiveTab] = useState<'schedule' | 'marketing' | 'cases' | 'growth' | 'space' | 'settings'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'marketing' | 'cases' | 'growth' | 'settings'>('schedule');
   const [toast, setToast] = useState<string | null>(null);
 
   // --- 模块数据状态 ---
   const [caseNotes, setCaseNotes] = useState<CaseNote[]>([]);
-  const [growthEvents, setGrowthEvents] = useState<GrowthEvent[]>([
-    { 
-      id: 'g1', 
-      title: '动力学读书会：克莱因《嫉妒与感激》', 
-      type: '读书会', 
-      organizerName: 'Sienna 郭', 
-      date: '2024.04.10', 
-      timeRange: '19:00-21:00', 
-      location: '腾讯会议', 
-      description: '深入研读克莱因早期客体关系理论，探讨投射性认同在临床中的应用。', 
-      participants: [] 
-    },
-    { 
-      id: 'g2', 
-      title: '同辈督导小组：复杂性创伤案例研讨', 
-      type: '督导组', 
-      organizerName: '沈知秋', 
-      date: '2024.04.15', 
-      timeRange: '14:00-16:00', 
-      location: '伴言深圳中心', 
-      description: '针对C-PTSD案例进行反向移情探讨。', 
-      participants: [] 
-    }
-  ]);
+  
+  // 从全局存储同步成长活动
+  const [growthEvents, setGrowthEvents] = useState<GrowthEvent[]>(() => {
+    const saved = localStorage.getItem('banyan_global_growth_events');
+    return saved ? JSON.parse(saved) : [
+      { 
+        id: 'g1', 
+        title: '动力学读书会：克莱因《嫉妒与感激》', 
+        type: '读书会', 
+        organizerName: 'Sienna 郭', 
+        date: '2024.04.10', 
+        timeRange: '19:00-21:00', 
+        location: '腾讯会议', 
+        description: '深入研读克莱因早期客体关系理论，探讨投射性认同在临床中的应用。', 
+        participants: [] 
+      }
+    ];
+  });
 
-  // 成长活动编辑状态
+  // 监听全局存储变化，实现实时同步
+  useEffect(() => {
+    const syncEvents = () => {
+      const saved = localStorage.getItem('banyan_global_growth_events');
+      if (saved) setGrowthEvents(JSON.parse(saved));
+    };
+    window.addEventListener('storage', syncEvents);
+    window.addEventListener('growth_events_updated', syncEvents);
+    return () => {
+      window.removeEventListener('storage', syncEvents);
+      window.removeEventListener('growth_events_updated', syncEvents);
+    };
+  }, []);
+
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventForm, setEventForm] = useState<Partial<GrowthEvent>>({
     title: '',
@@ -55,8 +61,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
     timeRange: '19:00 - 21:00'
   });
 
-  const [myPosts, setMyPosts] = useState<SpaceItem[]>([]);
-  const [newPost, setNewPost] = useState<Partial<SpaceItem>>({ title: '', excerpt: '', category: '咨询感悟' });
   const [passwordForm, setPasswordForm] = useState({ oldPass: '', newPass: '', confirmPass: '' });
 
   const showToast = (msg: string) => {
@@ -75,16 +79,12 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
       const savedNotes = localStorage.getItem(`notes_v2_${found.id}`);
       if (savedNotes) setCaseNotes(JSON.parse(savedNotes));
       
-      const posts = SPACE_ITEMS.filter(item => item.authorId === found.id);
-      setMyPosts(posts);
-      
       showToast(`${found.name}，欢迎回到伴言`);
     } else {
       setLoginError('编号或执业密码不匹配，请重新输入。');
     }
   };
 
-  // --- 排班逻辑 ---
   const daysOfWeek = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   const [activeDay, setActiveDay] = useState('周一');
 
@@ -113,7 +113,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
     return activeCounselor?.availableSlots.filter(s => s.day === activeDay && !s.isBooked) || [];
   }, [activeCounselor, activeDay]);
 
-  // --- 个案记录逻辑 ---
   const handleAddCaseNote = () => {
     const clientName = prompt('来访者称呼 (Initials/Name):');
     const content = prompt('临床记录内容 (Clinical Observations):');
@@ -134,7 +133,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
     showToast('个案记录已加密存证');
   };
 
-  // --- 成长容器逻辑：升级为 Modal 表单 ---
   const handleInitiateEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventForm.title || !activeCounselor) return;
@@ -151,7 +149,11 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
       participants: []
     };
     
-    setGrowthEvents([newEvent, ...growthEvents]);
+    const updatedEvents = [newEvent, ...growthEvents];
+    setGrowthEvents(updatedEvents);
+    localStorage.setItem('banyan_global_growth_events', JSON.stringify(updatedEvents));
+    window.dispatchEvent(new Event('growth_events_updated'));
+    
     setIsEventModalOpen(false);
     setEventForm({
       title: '',
@@ -161,37 +163,26 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
       date: new Date().toISOString().split('T')[0],
       timeRange: '19:00 - 21:00'
     });
-    showToast('专业火种已播种，等待同侪加入');
+    showToast('专业火种已同步给所有同行');
   };
 
-  const handleJoinEvent = (title: string) => {
-    showToast(`申请已发送：加入“${title}”`);
+  const handleJoinEvent = (eventId: string) => {
+    if (!activeCounselor) return;
+    
+    const updatedEvents = growthEvents.map(event => {
+      if (event.id === eventId) {
+        if (event.participants.includes(activeCounselor.name)) return event;
+        return { ...event, participants: [...event.participants, activeCounselor.name] };
+      }
+      return event;
+    });
+
+    setGrowthEvents(updatedEvents);
+    localStorage.setItem('banyan_global_growth_events', JSON.stringify(updatedEvents));
+    window.dispatchEvent(new Event('growth_events_updated'));
+    showToast('已确认参与，期待与您在场相遇');
   };
 
-  // --- 伴言空间逻辑 ---
-  const handlePublishPost = (isDraft: boolean) => {
-    if (!activeCounselor || !newPost.title) {
-      alert('请至少填写文章标题');
-      return;
-    }
-    const post: SpaceItem = {
-      id: `post-${Date.now()}`,
-      title: newPost.title || '',
-      excerpt: newPost.excerpt || '',
-      authorId: activeCounselor.id,
-      authorName: activeCounselor.name,
-      date: new Date().toLocaleDateString(),
-      category: newPost.category || '咨询感悟',
-      readTime: '5 min',
-      coverImage: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643',
-      isDraft
-    };
-    setMyPosts([post, ...myPosts]);
-    setNewPost({ title: '', excerpt: '', category: '咨询感悟' });
-    showToast(isDraft ? '草稿已保存' : '文章已发布至伴言空间');
-  };
-
-  // --- 账户设置逻辑 ---
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCounselor) return;
@@ -253,14 +244,12 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
       </header>
 
       <div className="flex flex-1 overflow-hidden rounded-[40px] md:rounded-[48px] bg-white shadow-2xl border border-stone-50 flex-col md:flex-row">
-        {/* 侧边栏 */}
         <aside className="w-full md:w-72 bg-[#FAF8F6]/40 border-r border-stone-50 p-6 md:p-10 flex flex-row md:flex-col gap-4 md:gap-10 shrink-0 overflow-x-auto no-scrollbar">
           {[
             { id: 'schedule', zh: '预约排班', en: 'AVAILABILITY' },
             { id: 'marketing', zh: '获客推广', en: 'MARKETING' },
             { id: 'cases', zh: '个案记录', en: 'CLIENT LOGS' },
             { id: 'growth', zh: '成长容器', en: 'GROWTH' },
-            { id: 'space', zh: '伴言空间', en: 'ARTICLES' },
             { id: 'settings', zh: '账户设置', en: 'SETTINGS' }
           ].map(tab => (
             <button 
@@ -275,10 +264,7 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
           ))}
         </aside>
 
-        {/* 主内容区域 */}
         <main className="flex-1 p-6 md:p-14 overflow-y-auto no-scrollbar bg-white">
-          
-          {/* 1. 排班设置 */}
           {activeTab === 'schedule' && (
             <div className="space-y-12 animate-in fade-in duration-500">
               <div className="space-y-2">
@@ -324,7 +310,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
             </div>
           )}
 
-          {/* 2. 获客推广 */}
           {activeTab === 'marketing' && (
             <div className="space-y-12 animate-in fade-in duration-500 max-w-2xl">
                <div className="space-y-2">
@@ -348,7 +333,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
             </div>
           )}
 
-          {/* 3. 个案记录 */}
           {activeTab === 'cases' && (
             <div className="space-y-12 animate-in fade-in duration-500">
               <div className="flex justify-between items-end">
@@ -385,7 +369,6 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
             </div>
           )}
 
-          {/* 4. 成长容器 */}
           {activeTab === 'growth' && (
             <div className="space-y-12 animate-in fade-in duration-500">
               <div className="flex justify-between items-end">
@@ -400,83 +383,78 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
                   发起专业活动
                 </button>
               </div>
-              <div className="space-y-8">
-                 {growthEvents.map(event => (
-                   <div key={event.id} className="p-10 bg-white rounded-[48px] border border-stone-100 flex flex-col md:flex-row gap-10 hover:shadow-2xl transition-all group">
-                      <div className="md:w-48 space-y-2 shrink-0 border-r border-stone-50 pr-8">
-                         <span className="text-[9px] font-black text-[#B87333] uppercase tracking-widest block">{event.type}</span>
-                         <div className="text-2xl font-serif text-[#1A1412]">{event.date}</div>
-                         <div className="text-[11px] text-stone-300 font-bold uppercase">{event.timeRange}</div>
-                      </div>
-                      <div className="flex-1 space-y-4">
-                         <h4 className="text-2xl font-serif group-hover:text-[#B87333] transition-colors">{event.title}</h4>
-                         <p className="text-stone-400 font-serif text-sm italic leading-relaxed">{event.description}</p>
-                         <div className="flex items-center gap-4 pt-4">
-                            <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Organizer: {event.organizerName}</span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#B87333]/20"></div>
-                            <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Location: {event.location}</span>
-                         </div>
-                      </div>
-                      <button 
-                        onClick={() => handleJoinEvent(event.title)}
-                        className="px-10 py-4 bg-[#1A1412] text-white rounded-full text-[10px] font-black uppercase tracking-widest self-center shadow-lg hover:bg-[#B87333] transition-colors"
-                      >
-                        立即加入
-                      </button>
-                   </div>
-                 ))}
+              <div className="space-y-10">
+                 {growthEvents.map(event => {
+                   const isOrganizer = event.organizerName === activeCounselor?.name;
+                   const isParticipant = event.participants.includes(activeCounselor?.name || '');
+
+                   return (
+                     <div key={event.id} className="p-10 bg-white rounded-[48px] border border-stone-100 flex flex-col gap-10 hover:shadow-2xl transition-all group overflow-hidden relative">
+                        {isOrganizer && <div className="absolute top-0 right-0 px-8 py-2 bg-[#B87333] text-white text-[9px] font-black uppercase tracking-widest rounded-bl-3xl">Organizer</div>}
+                        
+                        <div className="flex flex-col md:flex-row gap-10">
+                          <div className="md:w-48 space-y-2 shrink-0 border-r border-stone-50 pr-8">
+                             <span className="text-[9px] font-black text-[#B87333] uppercase tracking-widest block">{event.type}</span>
+                             <div className="text-2xl font-serif text-[#1A1412]">{event.date}</div>
+                             <div className="text-[11px] text-stone-300 font-bold uppercase">{event.timeRange}</div>
+                          </div>
+                          <div className="flex-1 space-y-4">
+                             <h4 className="text-2xl font-serif group-hover:text-[#B87333] transition-colors">{event.title}</h4>
+                             <p className="text-stone-400 font-serif text-sm italic leading-relaxed">{event.description}</p>
+                             <div className="flex items-center gap-4 pt-4">
+                                <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Organizer: {event.organizerName}</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#B87333]/20"></div>
+                                <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Location: {event.location}</span>
+                             </div>
+                          </div>
+                          
+                          <div className="flex flex-col justify-center items-center gap-4">
+                             {isOrganizer ? (
+                               <div className="text-center px-6 py-4 bg-stone-50 rounded-3xl border border-stone-100">
+                                  <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest block mb-2">已报名同行</span>
+                                  <span className="text-3xl font-serif text-[#1A1412]">{event.participants.length}</span>
+                               </div>
+                             ) : (
+                               <button 
+                                 onClick={() => handleJoinEvent(event.id)}
+                                 disabled={isParticipant}
+                                 className={`px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest self-center shadow-lg transition-all ${isParticipant ? 'bg-emerald-50 text-emerald-500 cursor-default' : 'bg-[#1A1412] text-white hover:bg-[#B87333]'}`}
+                               >
+                                 {isParticipant ? '✓ 已在席位' : '立即加入'}
+                               </button>
+                             )}
+                          </div>
+                        </div>
+
+                        {/* 组织者查看报名名单面板 */}
+                        {isOrganizer && event.participants.length > 0 && (
+                          <div className="mt-4 pt-8 border-t border-stone-50 animate-in slide-in-from-top-4">
+                             <div className="flex items-center gap-3 mb-4">
+                               <div className="w-6 h-[1px] bg-[#B87333]"></div>
+                               <span className="text-[9px] font-black text-[#1A1412] uppercase tracking-[0.2em]">已确认报名的专业同行 ({event.participants.length})</span>
+                             </div>
+                             <div className="flex flex-wrap gap-3">
+                                {event.participants.map((name, i) => (
+                                  <span key={i} className="px-4 py-2 bg-[#FAF8F6] border border-stone-100 rounded-xl text-xs font-bold text-stone-500 animate-in fade-in">
+                                     {name}
+                                  </span>
+                                ))}
+                             </div>
+                          </div>
+                        )}
+                        
+                        {isOrganizer && event.participants.length === 0 && (
+                          <div className="mt-4 pt-8 border-t border-stone-50 text-center">
+                             <p className="text-[10px] text-stone-300 font-serif italic">暂无同行报名，火种等待传递中...</p>
+                          </div>
+                        )}
+                     </div>
+                   );
+                 })}
               </div>
             </div>
           )}
 
-          {/* 5. 伴言空间 */}
-          {activeTab === 'space' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-               <div className="space-y-2">
-                 <h3 className="text-4xl font-serif text-[#1A1412]">伴言创作空间</h3>
-                 <p className="text-stone-400 font-serif italic text-sm">让文字成为疗愈的延伸。发布后，您的洞察将公示于首页“潜流之上”板块。</p>
-               </div>
-               <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-                  <div className="lg:col-span-8 space-y-10 p-12 bg-[#FAF8F6] rounded-[60px] border border-stone-50 shadow-sm">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-4">文章标题 TITLE</label>
-                        <input type="text" placeholder="此时此刻的思绪标题..." value={newPost.title} onChange={e => setNewPost({...newPost, title: e.target.value})} className="w-full bg-transparent text-3xl font-serif border-b border-stone-200 py-6 outline-none focus:border-[#B87333] transition-all" />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-stone-300 uppercase tracking-widest px-4">正文内容 CONTENT</label>
-                        <textarea placeholder="在这里记录您的临床观察、生命感悟或深度科普..." value={newPost.excerpt} onChange={e => setNewPost({...newPost, excerpt: e.target.value})} className="w-full h-96 bg-transparent font-serif text-xl leading-relaxed outline-none resize-none no-scrollbar" />
-                     </div>
-                     <div className="flex gap-6 pt-10 border-t border-stone-100">
-                        <button onClick={() => handlePublishPost(false)} className="px-12 py-5 bg-[#1A1412] text-white rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#B87333] transition-all">正式发布文章</button>
-                        <button onClick={() => handlePublishPost(true)} className="px-12 py-5 bg-white text-stone-400 border border-stone-100 rounded-full text-[11px] font-black uppercase tracking-[0.2em] hover:text-[#1A1412] transition-all">存为个人草稿</button>
-                     </div>
-                  </div>
-                  <div className="lg:col-span-4 space-y-8">
-                    <h5 className="text-[10px] font-black text-[#1A1412] uppercase tracking-[0.4em] px-4">我的创作轨迹 ({myPosts.length})</h5>
-                    <div className="space-y-6">
-                      {myPosts.map(post => (
-                        <div key={post.id} className="p-8 bg-white rounded-[32px] border border-stone-100 shadow-sm flex gap-6 hover:shadow-xl transition-all group">
-                          <div className="w-20 h-20 rounded-2xl bg-stone-50 shrink-0 overflow-hidden border border-stone-50">
-                             <img src={post.coverImage} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-1">
-                             <h6 className="font-bold text-base truncate text-[#1A1412]">{post.title}</h6>
-                             <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-stone-300 uppercase font-black">{post.date}</span>
-                                <span className="w-1 h-1 bg-stone-200 rounded-full"></span>
-                                <span className="text-[9px] text-[#B87333] font-black uppercase">{post.category}</span>
-                             </div>
-                          </div>
-                        </div>
-                      ))}
-                      {myPosts.length === 0 && <p className="text-stone-300 italic font-serif p-10 text-center bg-stone-50/50 rounded-[32px]">您还没有发布过文章</p>}
-                    </div>
-                  </div>
-               </div>
-            </div>
-          )}
-
-          {/* 6. 账户设置 */}
           {activeTab === 'settings' && (
             <div className="space-y-12 animate-in fade-in duration-500 max-w-xl">
                <div className="space-y-2">
@@ -503,11 +481,9 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({ onClose, 
                </div>
             </div>
           )}
-
         </main>
       </div>
 
-      {/* 发起成长活动 Modal */}
       {isEventModalOpen && (
         <div className="fixed inset-0 z-[400] bg-[#1A1412]/90 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-500">
            <div className="bg-white w-full max-w-3xl rounded-[60px] shadow-4xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-700">

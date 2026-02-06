@@ -16,10 +16,6 @@ const BanyanSpace: React.FC = () => {
     return () => window.removeEventListener('setSpaceTab', handleSetTab);
   }, []);
 
-  const handleOpenPortal = () => {
-    window.dispatchEvent(new CustomEvent('togglePractitionerPortal'));
-  };
-
   const filteredItems = activeTab === '全部' 
     ? SPACE_ITEMS 
     : SPACE_ITEMS.filter(item => item.category === activeTab);
@@ -39,11 +35,7 @@ const BanyanSpace: React.FC = () => {
               </h3>
               <p className="text-xl md:text-3xl font-serif text-[#1A1412]/60 tracking-[0.1em] leading-snug">
                 思绪的锚点 
-                <span 
-                  onDoubleClick={handleOpenPortal}
-                  className="text-[#B87333]/40 mx-2 cursor-pointer hover:text-[#B87333] transition-colors"
-                  title="双击进入专业工作台"
-                >·</span> 
+                <span className="text-[#B87333]/40 mx-2 select-none">·</span> 
                 行动的罗盘
               </p>
             </div>
@@ -56,6 +48,7 @@ const BanyanSpace: React.FC = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`flex flex-col items-center transition-all duration-500 group ${activeTab === tab ? 'text-[#1A1412]' : 'text-stone-300 hover:text-stone-500'}`}
               >
+                {/* FIX: Replaced non-existent activeCategory with activeTab */}
                 <span className={`text-[13px] font-bold tracking-widest ${activeTab === tab ? 'scale-110' : ''} transition-transform`}>{tab}</span>
                 <div className={`h-1 w-4 bg-[#B87333] mt-2 rounded-full transition-all duration-700 ${activeTab === tab ? 'opacity-100 scale-x-150' : 'opacity-0 scale-x-0'}`}></div>
               </button>
