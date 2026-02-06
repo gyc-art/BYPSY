@@ -1,0 +1,8 @@
+{
+  "name": "深圳市伴言心理咨询 - 专业心理服务平台",
+  "description": "Version1 伴言心理 (Banyan Psychology) 官方网站，提供专业咨询师预约、心理健康测评及AI智能导诊服务。由专业咨询师团队打造，致力于为每一颗心灵提供温暖的陪伴与专业的指引。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
