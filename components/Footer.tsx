@@ -23,7 +23,7 @@ const Footer: React.FC<FooterProps> = ({ onAdminPortal, onPractitionerPortal }) 
               />
               
               <h2 className="text-2xl md:text-3xl font-serif text-[#1A1412] tracking-wider font-medium">
-                深圳市伴言心理咨询有限责任公司
+                深圳市伴言心理有限责任公司
               </h2>
 
               {/* 咨询师入口：右侧极简灰色点，需双击触发 */}
@@ -96,7 +96,7 @@ const Footer: React.FC<FooterProps> = ({ onAdminPortal, onPractitionerPortal }) 
         {/* Bottom Bar: Professional Tagline & Rights */}
         <div className="pt-12 border-t border-stone-100 flex flex-col md:flex-row justify-between items-center gap-8">
           <p className="text-[9px] font-black text-stone-200 uppercase tracking-[0.6em] text-center md:text-left">
-            SHENZHEN BANYAN PSYCHOLOGY COUNSELING CO., LTD.
+            SHENZHEN BANYAN PSYCHOLOGY CO., LTD.
           </p>
           <p className="text-[9px] font-black text-stone-200 uppercase tracking-[0.2em]">
             © 2024 BANYAN PSYCHOLOGY. ALL RIGHTS RESERVED.
