@@ -373,18 +373,18 @@ const MainSite: React.FC = () => {
       {showServiceProcess && <ServiceProcessPage onClose={() => setShowServiceProcess(false)} />}
       {showRecruitmentPage && <RecruitmentPage onClose={() => setShowRecruitmentPage(false)} />}
 
-      {/* --- 首页核心 Hero 区域：针对移动端视觉优化重构 --- */}
-      <header className="relative w-full h-[calc(100vh-140px)] min-h-[650px] md:min-h-[750px] flex flex-col items-center justify-center bg-white overflow-hidden pt-10 md:pt-0">
+      {/* --- 首页核心 Hero 区域：修复网页端遮挡问题 --- */}
+      <header className="relative w-full h-[calc(100vh-140px)] min-h-[650px] md:min-h-[750px] flex flex-col items-center justify-center bg-white overflow-hidden pt-10 md:pt-24">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] animate-soft-glow -z-10 rounded-full"></div>
         
         <div className="w-full max-w-[1400px] px-6 md:px-10 relative flex flex-col items-center">
           <div className="flex flex-col items-center justify-center space-y-24 md:space-y-32">
             
-            {/* 错落书法艺术布局 - 移动端位移与字号精细适配 */}
+            {/* 错落书法艺术布局 - 优化网页端位移偏移量 */}
             <div className="flex items-center justify-center gap-4 md:gap-24 relative">
                
-               {/* 左部：升起的“伴”与“爱与在场” */}
-               <div className="flex flex-col items-center -translate-y-12 md:-translate-y-32 animate-in slide-in-from-bottom-12 duration-[1500ms] ease-out">
+               {/* 左部：升起的“伴”与“爱与在场” - md 偏移量由 -32 优化为 -12 */}
+               <div className="flex flex-col items-center -translate-y-12 md:-translate-y-12 animate-in slide-in-from-bottom-12 duration-[1500ms] ease-out">
                   <h2 className="hero-title-pillar font-serif select-none hover:text-[#B87333] transition-colors duration-1000">伴</h2>
                   <span className="font-serif text-[18px] sm:text-[24px] md:text-[56px] text-[#1A1412]/40 tracking-[0.4em] md:tracking-[0.8em] whitespace-nowrap mt-3 md:mt-12 opacity-70 italic leading-none">爱与在场</span>
                </div>
@@ -394,8 +394,8 @@ const MainSite: React.FC = () => {
                   <div className="w-full h-[1px] bg-gradient-to-r from-[#B87333]/5 via-[#B87333]/40 to-[#B87333]/5 shadow-sm transform -rotate-[30deg] md:-rotate-[22deg]"></div>
                </div>
 
-               {/* 右部：沉稳的“言”与“观察解析” */}
-               <div className="flex flex-col items-center translate-y-12 md:translate-y-32 animate-in slide-in-from-top-12 duration-[1500ms] ease-out">
+               {/* 右部：沉稳的“言”与“观察解析” - md 偏移量同步优化为 12 */}
+               <div className="flex flex-col items-center translate-y-12 md:translate-y-12 animate-in slide-in-from-top-12 duration-[1500ms] ease-out">
                   <h2 className="hero-title-pillar font-serif select-none hover:text-[#B87333] transition-colors duration-1000">言</h2>
                   <span className="font-serif text-[18px] sm:text-[24px] md:text-[56px] text-[#1A1412]/40 tracking-[0.4em] md:tracking-[0.8em] whitespace-nowrap mt-3 md:mt-12 opacity-70 italic leading-none">观察解析</span>
                </div>
