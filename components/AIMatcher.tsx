@@ -23,9 +23,9 @@ const AIMatcher: React.FC<AIMatcherProps> = ({ onMatched }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4">
-      {/* 栏头新增人文感言 */}
-      <div className="mb-8 md:mb-12 text-center space-y-3">
-        <h4 className="text-xl md:text-3xl font-serif text-[#1A1412]/80 tracking-widest italic animate-in fade-in duration-1000">
+      {/* 栏头新增人文感言 - 锁定单行显示 */}
+      <div className="mb-8 md:mb-12 text-center space-y-3 overflow-hidden">
+        <h4 className="text-[16px] sm:text-xl md:text-3xl font-serif text-[#1A1412]/80 tracking-widest italic animate-in fade-in duration-1000 whitespace-nowrap">
           “专业的尽头，是温厚的人文理解。”
         </h4>
         <div className="w-12 h-[1px] bg-[#B87333]/30 mx-auto"></div>
