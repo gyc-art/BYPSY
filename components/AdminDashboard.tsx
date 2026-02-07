@@ -98,7 +98,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
       reader.onload = (event) => {
         if (event.target?.result) {
           callback(event.target.result as string);
-          showToast('✓ 图片已读取');
         }
       };
       reader.readAsDataURL(file);
@@ -300,7 +299,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                        </div>
                        <div className="space-y-4 pt-6 border-t border-stone-100">
                           <label className="text-[10px] font-black text-[#1A1412] uppercase tracking-widest block mb-4">小助理微信码 (ASSET)</label>
-                          <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setAssistantQr(b))} className="aspect-square bg-white rounded-3xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center relative group overflow-hidden">
+                          <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => {setAssistantQr(b); showToast('✓ 小助理码已更新');})} className="aspect-square bg-white rounded-3xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center relative group overflow-hidden">
                              {assistantQr ? <img src={assistantQr} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[9px] font-black uppercase tracking-widest">拖入小助理码</span>}
                           </div>
                        </div>
@@ -315,21 +314,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
               <div className="flex justify-between items-end">
                 <div className="space-y-2">
                   <h3 className="text-4xl font-serif text-[#1A1412]">专家名录</h3>
-                  <p className="text-stone-400 font-serif italic text-sm">严选专家入驻管理。同步后信息将实时更新至前端展示墙。</p>
+                  <p className="text-stone-400 font-serif italic text-sm">严选专家入驻管理。直接拖入图片至卡片可快速修改头像。</p>
                 </div>
                 <button onClick={handleOpenNewCounselor} className="px-10 py-4 bg-[#B87333] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">新增专家档案</button>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-10">
                 {allCounselors.map(c => (
-                  <div key={c.id} className="p-10 bg-white rounded-[40px] border border-stone-100 hover:shadow-2xl transition-all flex flex-col gap-6">
-                    <div className="flex gap-6 items-center">
-                      <img src={c.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2'} className="w-20 h-20 rounded-2xl object-cover grayscale-[20%]" />
+                  <div 
+                    key={c.id} 
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => handleImageDrop(e, (base64) => {
+                      const updatedList = allCounselors.map(item => item.id === c.id ? { ...item, avatar: base64 } : item);
+                      onUpdateCounselors(updatedList);
+                      showToast(`✓ ${c.name} 的头像已更新`);
+                    })}
+                    className="group/card relative p-10 bg-white rounded-[40px] border border-stone-100 hover:shadow-2xl transition-all flex flex-col gap-6"
+                  >
+                    {/* 拖拽上传覆盖层 */}
+                    <div className="absolute inset-0 bg-[#B87333]/5 opacity-0 group-hover/card:opacity-100 border-2 border-dashed border-[#B87333]/20 rounded-[40px] pointer-events-none transition-opacity flex items-center justify-center z-10">
+                       <span className="text-[9px] font-black text-[#B87333] uppercase tracking-widest bg-white/90 px-4 py-2 rounded-full shadow-sm">释放以更换头像</span>
+                    </div>
+
+                    <div className="flex gap-6 items-center relative z-0">
+                      <div className="relative w-20 h-20 shrink-0">
+                        <img src={c.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2'} className="w-full h-full rounded-2xl object-cover grayscale-[20%]" />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full"></div>
+                      </div>
                       <div>
-                        <h4 className="text-2xl font-serif">{c.name}</h4>
+                        <h4 className="text-2xl font-serif text-[#1A1412]">{c.name}</h4>
                         <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">{c.serialNumber}</span>
                       </div>
                     </div>
-                    <button onClick={() => setEditingCounselor(c)} className="w-full py-4 bg-[#1A1412] text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest">编辑档案</button>
+                    <button onClick={() => setEditingCounselor(c)} className="w-full py-4 bg-[#1A1412] text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest relative z-20">编辑详细档案</button>
                   </div>
                 ))}
               </div>
@@ -375,7 +391,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
               )}
               {financeSubTab === 'payment_config' && (
                 <div className="max-w-xl bg-[#FAF8F6] p-10 rounded-[40px] border border-stone-50 space-y-8">
-                   <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setPaymentConfig({...paymentConfig, qrCodeUrl: b}))} className="aspect-square w-48 bg-white mx-auto rounded-3xl border-2 border-dashed border-stone-200 flex items-center justify-center relative group overflow-hidden">
+                   <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => {setPaymentConfig({...paymentConfig, qrCodeUrl: b}); showToast('✓ 收款码已读取');})} className="aspect-square w-48 bg-white mx-auto rounded-3xl border-2 border-dashed border-stone-200 flex items-center justify-center relative group overflow-hidden">
                       {paymentConfig.qrCodeUrl ? <img src={paymentConfig.qrCodeUrl} className="w-full h-full object-contain" /> : <span className="text-stone-200 text-[10px] font-black">拖入收款二维码</span>}
                    </div>
                    <input type="text" placeholder="对公账户名称" value={paymentConfig.accountName} onChange={e => setPaymentConfig({...paymentConfig, accountName: e.target.value})} className="w-full p-4 bg-white border border-stone-100 rounded-2xl outline-none" />
@@ -396,7 +412,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, allCounselors,
                 <header className="mb-16"><h2 className="text-4xl md:text-6xl font-serif text-[#1A1412] tracking-tighter italic">档案编辑器</h2></header>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
                    <div className="lg:col-span-5 space-y-12">
-                      <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => setEditingCounselor({...editingCounselor, avatar: b}))} className="aspect-[4/5] bg-stone-50 rounded-[48px] overflow-hidden border border-stone-100 relative group cursor-pointer">
+                      <div onDragOver={e => e.preventDefault()} onDrop={e => handleImageDrop(e, (b) => {setEditingCounselor({...editingCounselor, avatar: b}); showToast('✓ 档案照片已更新');})} className="aspect-[4/5] bg-stone-50 rounded-[48px] overflow-hidden border border-stone-100 relative group cursor-pointer">
                          {editingCounselor.avatar ? <img src={editingCounselor.avatar} className="w-full h-full object-cover transition-all group-hover:scale-105 duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-stone-200">拖入照片</div>}
                       </div>
                       <div className="grid grid-cols-2 gap-8">
