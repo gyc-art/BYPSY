@@ -38,6 +38,18 @@ const MainSite: React.FC = () => {
   const [sessionCount, setSessionCount] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'transfer'>('qr');
 
+  // --- 支付加固状态 ---
+  const [isPaymentVerified, setIsPaymentVerified] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState('');
+  const pollingRef = useRef<number | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(() => {
     const saved = localStorage.getItem('banyan_payment_config');
     return saved ? JSON.parse(saved) : {
@@ -51,6 +63,76 @@ const MainSite: React.FC = () => {
   const [assistantQr, setAssistantQr] = useState<string>(() => {
     return localStorage.getItem('banyan_assistant_qr') || '';
   });
+
+  // 支付轮询逻辑
+  useEffect(() => {
+    if (bookingStep === 'payment') {
+      const orderId = `BY-${Date.now()}`;
+      setCurrentOrderId(orderId);
+      setIsPaymentVerified(false);
+
+      // 启动轮询：每3秒检查一次
+      pollingRef.current = window.setInterval(async () => {
+        try {
+          const res = await fetch('/api/check-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, phone: clientPhone })
+          });
+          const data = await res.json();
+          if (data.success) {
+            setIsPaymentVerified(true);
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            showToast('✓ 系统已确认您的支付');
+          }
+        } catch (e) {
+          console.error('Payment poll failed');
+        }
+      }, 3000);
+    } else {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    }
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [bookingStep]);
+
+  // 手动点击“我已完成支付”时的最终校验
+  const handleFinalPaymentCheck = async () => {
+    if (isPaymentVerified) {
+      setBookingStep('assistant');
+      setClientSessions(clientSessions + sessionCount);
+      return;
+    }
+
+    setIsCheckingPayment(true);
+    showToast('支付确认中，请稍后...');
+
+    try {
+      const res = await fetch('/api/check-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: currentOrderId, phone: clientPhone })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setIsPaymentVerified(true);
+        setBookingStep('assistant');
+        setClientSessions(clientSessions + sessionCount);
+      } else {
+        // 未检测到支付，优雅提示
+        setTimeout(() => {
+          showToast('尚未检测到到账信息，请确认支付成功后重试');
+          setIsCheckingPayment(false);
+        }, 1500);
+      }
+    } catch (error) {
+      showToast('通讯异常，请联系伴言小助理手动核实');
+      setIsCheckingPayment(false);
+    }
+  };
 
   useEffect(() => {
     const updatePaymentConfig = () => {
@@ -238,6 +320,14 @@ const MainSite: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white selection:bg-[#B87333]/20">
+      {/* Toast 提示浮层 */}
+      {toast && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[9999] bg-[#1A1412] text-white px-8 py-4 rounded-full shadow-2xl animate-in slide-in-from-top-4 flex items-center gap-3">
+          <div className="w-1.5 h-1.5 bg-[#B87333] rounded-full"></div>
+          <span className="text-[10px] font-black tracking-widest uppercase">{toast}</span>
+        </div>
+      )}
+
       <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-3xl border-b border-stone-100">
         <nav className="px-6 md:px-20 py-4 md:py-8 flex flex-col items-center">
           <div className="w-full flex justify-between items-center">
@@ -566,7 +656,17 @@ const MainSite: React.FC = () => {
                        </div>
                     </div>
 
-                    <button onClick={() => {setBookingStep('assistant'); setClientSessions(clientSessions + sessionCount);}} className="px-24 py-5 bg-[#1A1412] text-white rounded-full font-black uppercase tracking-[0.3em] text-[11px] hover:bg-[#B87333] transition-all shadow-2xl mb-12">我已完成支付 I PAID</button>
+                    <button 
+                      onClick={handleFinalPaymentCheck}
+                      disabled={isCheckingPayment}
+                      className={`px-24 py-5 rounded-full font-black uppercase tracking-[0.3em] text-[11px] transition-all shadow-2xl mb-12 flex items-center gap-4 ${
+                        isPaymentVerified 
+                          ? 'bg-emerald-600 text-white' 
+                          : 'bg-[#1A1412] text-white hover:bg-[#B87333]'
+                      }`}
+                    >
+                      {isPaymentVerified ? '✓ 支付已确认 CONTINUE' : isCheckingPayment ? '正在核对订单...' : '我已完成支付 I PAID'}
+                    </button>
                  </div>
                )}
                {bookingStep === 'assistant' && (
