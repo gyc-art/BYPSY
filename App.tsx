@@ -71,7 +71,6 @@ const MainSite: React.FC = () => {
       setCurrentOrderId(orderId);
       setIsPaymentVerified(false);
 
-      // 启动轮询：每3秒检查一次
       pollingRef.current = window.setInterval(async () => {
         try {
           const res = await fetch('/api/check-payment', {
@@ -98,7 +97,6 @@ const MainSite: React.FC = () => {
     };
   }, [bookingStep]);
 
-  // 手动点击“我已完成支付”时的最终校验
   const handleFinalPaymentCheck = async () => {
     if (isPaymentVerified) {
       setBookingStep('assistant');
@@ -122,7 +120,6 @@ const MainSite: React.FC = () => {
         setBookingStep('assistant');
         setClientSessions(clientSessions + sessionCount);
       } else {
-        // 未检测到支付，优雅提示
         setTimeout(() => {
           showToast('尚未检测到到账信息，请确认支付成功后重试');
           setIsCheckingPayment(false);
@@ -259,7 +256,7 @@ const MainSite: React.FC = () => {
       return;
     }
     if (changePasswordForm.newPass.length < 6) {
-      alert('新密码长度需不少于6位。');
+      alert('新密码长度不能少于6位。');
       return;
     }
     localStorage.setItem(`client_pass_${changePasswordForm.phone}`, changePasswordForm.newPass);
@@ -320,7 +317,6 @@ const MainSite: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white selection:bg-[#B87333]/20">
-      {/* Toast 提示浮层 */}
       {toast && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[9999] bg-[#1A1412] text-white px-8 py-4 rounded-full shadow-2xl animate-in slide-in-from-top-4 flex items-center gap-3">
           <div className="w-1.5 h-1.5 bg-[#B87333] rounded-full"></div>
@@ -367,7 +363,7 @@ const MainSite: React.FC = () => {
                 <span className="text-[11px] font-bold text-[#1A1412] tracking-widest">{clientPhone ? '我的空间' : '登录'}</span>
                 <span className="text-[8px] font-black text-stone-200 uppercase tracking-widest">Login</span>
               </button>
-              <button onClick={() => document.getElementById('counselors-grid-anchor')?.scrollIntoView({behavior:'smooth'})} className="bg-[#1A1412] text-white px-8 py-2.5 rounded-full text-[11px] font-black tracking-[0.2em] hover:bg-[#B87333] transition-all duration-500 shadow-md">立即预约</button>
+              <button onClick={() => document.getElementById('counselors-grid-anchor')?.scrollIntoView({behavior:'smooth'})} className="bg-[#1A1412] text-white px-8 py-2.5 rounded-full text-[11px] font-black tracking-[0.2em] hover:bg-[#B87333] transition-all duration-500 shadow-md whitespace-nowrap">立即预约</button>
             </div>
           </div>
         </nav>
@@ -377,31 +373,48 @@ const MainSite: React.FC = () => {
       {showServiceProcess && <ServiceProcessPage onClose={() => setShowServiceProcess(false)} />}
       {showRecruitmentPage && <RecruitmentPage onClose={() => setShowRecruitmentPage(false)} />}
 
-      <header className="relative w-full h-[calc(100vh-140px)] min-h-[750px] flex flex-col items-center justify-center bg-white overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] animate-soft-glow -z-10 rounded-full"></div>
-        <div className="w-full max-w-[1200px] px-10 relative flex flex-col items-center">
-          <div className="flex flex-col items-center justify-center space-y-24">
-            <div className="flex items-center justify-center gap-10 md:gap-20 relative">
-               <h2 className="hero-title-pillar font-serif select-none">伴</h2>
-               <div className="flex flex-col items-center justify-center space-y-6 md:space-y-12 shrink-0">
-                  <span className="font-serif text-[24px] md:text-[54px] text-[#1A1412]/50 tracking-[0.8em] whitespace-nowrap opacity-80">爱与在场</span>
-                  <div className="w-32 md:w-64 h-[1px] bg-stone-100/60 shadow-sm"></div>
-                  <span className="font-serif text-[24px] md:text-[54px] text-[#1A1412]/50 tracking-[0.8em] whitespace-nowrap opacity-80">观察解析</span>
+      {/* --- 首页核心 Hero 区域：针对移动端视觉优化重构 --- */}
+      <header className="relative w-full h-[calc(100vh-140px)] min-h-[650px] md:min-h-[750px] flex flex-col items-center justify-center bg-white overflow-hidden pt-10 md:pt-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] animate-soft-glow -z-10 rounded-full"></div>
+        
+        <div className="w-full max-w-[1400px] px-6 md:px-10 relative flex flex-col items-center">
+          <div className="flex flex-col items-center justify-center space-y-24 md:space-y-32">
+            
+            {/* 错落书法艺术布局 - 移动端位移与字号精细适配 */}
+            <div className="flex items-center justify-center gap-4 md:gap-24 relative">
+               
+               {/* 左部：升起的“伴”与“爱与在场” */}
+               <div className="flex flex-col items-center -translate-y-12 md:-translate-y-32 animate-in slide-in-from-bottom-12 duration-[1500ms] ease-out">
+                  <h2 className="hero-title-pillar font-serif select-none hover:text-[#B87333] transition-colors duration-1000">伴</h2>
+                  <span className="font-serif text-[18px] sm:text-[24px] md:text-[56px] text-[#1A1412]/40 tracking-[0.4em] md:tracking-[0.8em] whitespace-nowrap mt-3 md:mt-12 opacity-70 italic leading-none">爱与在场</span>
                </div>
-               <h2 className="hero-title-pillar font-serif select-none">言</h2>
+
+               {/* 中间：引导流光斜线 - 移动端角度微调 */}
+               <div className="flex flex-col items-center justify-center shrink-0 w-16 md:w-48">
+                  <div className="w-full h-[1px] bg-gradient-to-r from-[#B87333]/5 via-[#B87333]/40 to-[#B87333]/5 shadow-sm transform -rotate-[30deg] md:-rotate-[22deg]"></div>
+               </div>
+
+               {/* 右部：沉稳的“言”与“观察解析” */}
+               <div className="flex flex-col items-center translate-y-12 md:translate-y-32 animate-in slide-in-from-top-12 duration-[1500ms] ease-out">
+                  <h2 className="hero-title-pillar font-serif select-none hover:text-[#B87333] transition-colors duration-1000">言</h2>
+                  <span className="font-serif text-[18px] sm:text-[24px] md:text-[56px] text-[#1A1412]/40 tracking-[0.4em] md:tracking-[0.8em] whitespace-nowrap mt-3 md:mt-12 opacity-70 italic leading-none">观察解析</span>
+               </div>
             </div>
-            <div className="flex flex-col items-center space-y-16">
-              <div className="flex items-center gap-8 text-stone-300 font-serif">
-                 <span className="text-[10px] md:text-sm">●</span>
-                 <span className="text-[16px] md:text-[22px] tracking-[0.5em] font-medium text-stone-400">全员心理学硕博背景</span>
-                 <span className="text-[10px] md:text-sm">●</span>
+
+            <div className="flex flex-col items-center space-y-16 md:space-y-20">
+              <div className="flex items-center gap-6 md:gap-10 text-stone-300 font-serif">
+                 <div className="w-1.5 h-1.5 rounded-full border border-[#B87333]/20"></div>
+                 <span className="text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.3em] md:tracking-[0.6em] font-medium text-stone-400">全员心理学硕博背景</span>
+                 <div className="w-1.5 h-1.5 rounded-full border border-[#B87333]/20"></div>
               </div>
-              <div className="flex flex-wrap justify-center gap-6 md:gap-10">
-                <button onClick={() => setShowMissionPage(true)} className="hero-pill-btn group px-12 md:px-20 py-4 md:py-6 rounded-full text-[12px] md:text-[14px] font-bold text-[#1A1412]/50 tracking-[0.2em] flex items-center gap-4 hover:text-[#1A1412] transition-all">
-                   <span className="text-[#B87333] transition-transform group-hover:scale-125">●</span> 品牌使命
+              <div className="flex flex-wrap justify-center gap-6 md:gap-14">
+                <button onClick={() => setShowMissionPage(true)} className="hero-pill-btn group px-12 md:px-24 py-4 md:py-7 rounded-full text-[11px] md:text-[14px] font-bold text-[#1A1412]/60 tracking-[0.2em] md:tracking-[0.3em] flex items-center gap-4 md:gap-5 hover:text-[#1A1412] transition-all">
+                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#B87333] rounded-full transition-all group-hover:scale-[1.8] group-hover:shadow-[0_0_15px_rgba(184,115,51,0.4)]"></div> 
+                   品牌使命
                 </button>
-                <button onClick={() => setShowServiceProcess(true)} className="hero-pill-btn group px-12 md:px-20 py-4 md:py-6 rounded-full text-[12px] md:text-[14px] font-bold text-[#1A1412]/50 tracking-[0.2em] flex items-center gap-4 hover:text-[#1A1412] transition-all">
-                   <span className="text-[#B87333] transition-transform group-hover:scale-125">●</span> 服务流程
+                <button onClick={() => setShowServiceProcess(true)} className="hero-pill-btn group px-12 md:px-24 py-4 md:py-7 rounded-full text-[11px] md:text-[14px] font-bold text-[#1A1412]/60 tracking-[0.2em] md:tracking-[0.3em] flex items-center gap-4 md:gap-5 hover:text-[#1A1412] transition-all">
+                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#B87333] rounded-full transition-all group-hover:scale-[1.8] group-hover:shadow-[0_0_15px_rgba(184,115,51,0.4)]"></div> 
+                   服务流程
                 </button>
               </div>
             </div>
@@ -445,7 +458,7 @@ const MainSite: React.FC = () => {
                <div className="relative group w-full md:w-64">
                   <input 
                     type="text" 
-                    placeholder="搜索专家姓名或编号..." 
+                    placeholder="搜索专家姓名..." 
                     value={searchTerm} 
                     onChange={(e) => setSearchTerm(e.target.value)} 
                     className="w-full bg-stone-50/50 border border-stone-100 rounded-full px-6 py-3 text-[11px] font-bold text-[#1A1412] outline-none focus:border-[#B87333]/30 transition-all placeholder:text-stone-200" 
